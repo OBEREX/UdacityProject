@@ -12,14 +12,14 @@ commands:
                     name: Destroy environments
                     when: on_fail
                     command: |
-                    # Empty frontend bucket
-                    aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
+                        # Empty frontend bucket
+                        aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
 
-                    # Delete frontend stack
-                    aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
+                        # Delete frontend stack
+                        aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
 
-                    # Delete backend stack
-                    aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.Workflow_ID >>   
+                        # Delete backend stack
+                        aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.Workflow_ID >>   
         install_awscli:
             description: Install AWS CLI v2
             steps:
@@ -35,7 +35,7 @@ commands:
                 - run:
                     name: Install Ansible
                     command: |
-                    python3 -m pip install --user ansible
+                        python3 -m pip install --user ansible
 orbs: 
     slack: circleci/slack@4.10.1
     commands:
