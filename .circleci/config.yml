@@ -49,6 +49,26 @@ commands:
                     # Use n version manager to use Node.js v13.8.0
                     sudo npm install --global n
                     sudo n 13.8.0
+    evert-migrations:
+        description: Revert the last migration, if any were executed during the current workflow
+        parameters:
+        Workflow_ID:
+            type: string
+            default: ${CIRCLE_WORKFLOW_ID:0:7}
+        steps:
+            - run:
+                name: Revert migrations
+                when: on_fail
+                command: |
+                    SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+
+                    # Logic for reverting the database state
+                    if (( $SUCCESS == 1 ));
+                    then
+                    cd ~/project/backend
+                    npm install
+                    npm run migration:revert
+                    fi
 orbs: 
     slack: circleci/slack@4.10.1
     commands:
@@ -218,6 +238,69 @@ jobs:
                     ansible-playbook -i inventory.txt configure-server.yml
             - destroy-environment    
 
+    run-migrations:
+        docker:
+            - image: cimg/python:3.10
+        steps:
+            - checkout
+            - install_awscli
+            - install_nodejs
+
+            - restore_cache:
+                keys: [backend-deps]
+            - run:
+                name: Run migrations
+                command: |
+                    cd backend
+                    npm install
+                    npm run migrations > migrations_dump.txt
+                    cat migrations_dump.txt
+            - run:
+                name: Send migration results to memstash
+                command: |
+                    cd backend
+                    npm install
+                    npm run migrations > migrations_dump.txt
+                    cat migrations_dump.txt
+            - destroy-environment
+            - revert-migrations  
+
+    deploy-frontend:
+        docker:
+            - image: cimg/python:3.10    
+        steps:
+                - checkout
+                - install_awscli
+                - install_nodejs
+
+                - restore_cache:
+                    keys: [backend-deps]
+                - run:
+                    name: Install dependencies
+                    command: |
+                    cd frontend
+                    npm install
+                - run:
+                    name: Get backend url
+                    command: |
+                    BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+                        --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                        --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                        --output text)
+
+                    echo "API_URL=http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
+                    cat frontend/.env
+
+                - run:
+                    name: Deploy frontend objects
+                    command: |
+                        cd frontend
+                        npm run build
+                        aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+                
+                - destroy-environment
+                - revert-migrations
+
 
 
 
@@ -241,3 +324,5 @@ workflows:
                         only: [master]
             - configure-infrastructure:
                 requires: [deploy-infrastructure]
+            - run-migrations:
+                requires: [configure-infrastructure]
