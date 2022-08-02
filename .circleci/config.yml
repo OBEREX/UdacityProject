@@ -326,4 +326,5 @@ workflows:
                 requires: [deploy-infrastructure]
             - run-migrations:
                 requires: [configure-infrastructure]
-            - destroy-environment   
+            - destroy-environment :
+                requires: [run-migration]  
