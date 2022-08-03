@@ -1,6 +1,20 @@
 version: 2.1           
 
+orbs: 
+    slack: circleci/slack@4.10.1
 commands:
+    notify_on_failure:
+                steps:
+                - slack/notify:
+                    event: fail
+                    channel: cicd-pipeline
+                    template: basic_fail_1
+    notify_on_success:
+        steps:
+        - slack/notify:
+            event: pass
+            channel: cicd-pipeline
+            template: success_tagged_deployment_1
     destroy-environment:
         description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
         parameters:
@@ -69,21 +83,8 @@ commands:
                     npm install
                     npm run migration:revert
                     fi
-orbs: 
-    slack: circleci/slack@4.10.1
-    commands:
-        notify_on_failure:
-            steps:
-            - slack/notify:
-                event: fail
-                channel: cicd-pipeline
-                template: basic_fail_1
-        notify_on_success:
-            steps:
-            - slack/notify:
-                event: pass
-                channel: cicd-pipeline
-                template: success_tagged_deployment_1
+
+    
 jobs:
     build-frontend:
         docker:
@@ -327,9 +328,9 @@ jobs:
                 command: |
                     cd backend
                     npm run build
-                    cd ..
-                    tar -czf artifact.tar.gz dist/* package*
                     
+                    tar -czf artifact.tar.gz dist/* package*
+                    cd ..
                     cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
             - run:
                 name: Deploy backend
