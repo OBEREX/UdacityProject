@@ -103,7 +103,7 @@ jobs:
                 - save_cache:
                     paths: [frontend/node_modules]
                     key: frontend-deps
-                
+                - notify_on_failure
 
     build-backend:
         docker:
@@ -122,7 +122,7 @@ jobs:
                 - save_cache:
                         paths: [backend/node_modules]
                         key: backend-dep
-
+                - notify_on_failure
     test-frontend:
         docker:
             - image: circleci/node:13.8.0
@@ -136,6 +136,7 @@ jobs:
                         cd frontend
                         npm install
                         npm run test
+                - notify_on_failure
                     
 
     test-backend:
@@ -151,7 +152,7 @@ jobs:
                         cd backend
                         npm install
                         npm run test
-
+                - notify_on_failure
 
     scan-frontend:
             docker:
@@ -165,8 +166,8 @@ jobs:
                     command: |
                         cd frontend
                         npm install
-                        npm audit fix --force --audit-level=critical
                         npm audit --audit-level=critical   
+                        npm audit fix --force --audit-level=critical
 
     scan-backend:
             docker:
@@ -180,9 +181,9 @@ jobs:
                         command: |
                             cd backend
                             npm install
-                            npm audit fix --force --audit-level=critical
-                            npm audit fix --force --audit-level=critical
                             npm audit --audit-level=critical  
+                            npm audit fix --force --audit-level=critical
+                            npm audit fix --force --audit-level=critical
     deploy-infrastructure:
         docker:
             - image: cimg/python:3.10
@@ -296,9 +297,7 @@ jobs:
                     name: Deploy frontend objects
                     command: |
                         cd frontend
-                        npm install
                         npm run build
-                        tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
                         aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
                 
                 - destroy-environment
