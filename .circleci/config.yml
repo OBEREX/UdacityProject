@@ -190,14 +190,14 @@ jobs:
         - image: amazon/aws-cli
         steps:
         - checkout
+        - install_awscli
+        - install_nodejs
+        - install_ansible
         - run:
             name: Install dependencies
             command: |
                 cd backend
                 npm install
-        - install_awscli
-        - install_nodejs
-        - install_ansible
         - run:
             name: Ensure back-end infrastructure exists
             command: |
@@ -232,19 +232,20 @@ jobs:
         - image: cimg/python:3.10
         steps:
         - checkout
-        - run:
-            name: Install dependencies
-            command: |
-                cd backend
-                npm install
         - install_awscli
         - install_nodejs
         - install_ansible
+
         - add_ssh_keys:
             fingerprints:
                 - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
         - attach_workspace:
             at: ~/
+        - run:
+            name: Install dependencies
+            command: |
+                cd backend
+                npm install
         - run:
             name: Configure server
             command: |
@@ -262,14 +263,14 @@ jobs:
             - image: cimg/python:3.10
         steps:
             - checkout
+            - install_awscli
+            - install_nodejs
+            - install_ansible
             - run:
                 name: Install dependencies
                 command: |
                     cd backend
                     npm install
-            - install_awscli
-            - install_nodejs
-            - install_ansible
             - restore_cache:
                 keys: [backend-build]
             - attach_workspace:
