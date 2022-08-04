@@ -190,12 +190,13 @@ jobs:
         - image: amazon/aws-cli
         steps:
         - checkout
-        - install_awscli
-        - install_nodejs
         - run:
                 name: Install dependencies
                 command: |
-                    sudo apt install -y tar gzip curl
+                    sudo apt install -y tar gzip curl zip unzip
+        - install_awscli
+        - install_nodejs
+        - install_ansible
         - run:
             name: Ensure back-end infrastructure exists
             command: |
@@ -230,13 +231,12 @@ jobs:
         - image: cimg/python:3.10
         steps:
         - checkout
-        - install_awscli
-        - install_nodejs
         - run:
                 name: Install dependencies
                 command: |
-                    sudo apt install -y tar gzip curl
+                    sudo apt install -y tar gzip curl zip unzip
         - install_awscli
+        - install_nodejs
         - install_ansible
         - add_ssh_keys:
             fingerprints:
@@ -260,12 +260,13 @@ jobs:
             - image: cimg/python:3.10
         steps:
             - checkout
-            - install_awscli
-            - install_nodejs
             - run:
                 name: Install dependencies
                 command: |
-                    sudo apt install -y tar gzip curl
+                    sudo apt install -y tar gzip curl zip unzip
+            - install_awscli
+            - install_nodejs
+            - install_ansible
             - restore_cache:
                 keys: [backend-build]
             - attach_workspace:
@@ -293,12 +294,13 @@ jobs:
         - image: cimg/python:3.10
         steps:
         - checkout
-        - install_awscli
-        - install_nodejs
         - run:
                 name: Install dependencies
                 command: |
-                    sudo apt install -y tar gzip curl
+                    sudo apt install -y tar gzip curl zip unzip
+        - install_awscli
+        - install_nodejs
+        - install_ansible
         - restore_cache:
             keys: [frontend-build]
         - run:
@@ -327,15 +329,20 @@ jobs:
         - image: python:3.7-alpine3.16
         steps:
         - checkout
+        - run:
+                name: Install dependencies
+                command: |
+                    sudo apt install -y tar gzip curl zip unzip
         - install_awscli
         - install_nodejs
+        - install_ansible
         - add_ssh_keys:
             fingerprints:
                 - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
         - run:
                 name: Install dependencies
                 command: |
-                    sudo apt install -y tar gzip curl ansible
+                    sudo apt install -y tar gzip curl ansible zip unzip
         - restore_cache:
             keys: [backend-build]
         - attach_workspace:
