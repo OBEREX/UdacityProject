@@ -263,7 +263,7 @@ jobs:
             - run: 
                 name: Install dependencies 
                 command: |
-                    apk add --update curl openssh nodejs npm
+                    apk add --update curl openssh nodejs 
                     pip install awscli
                     npm --version
                     aws --version
@@ -275,6 +275,7 @@ jobs:
                 name: Run migrations
                 command: |
                     cd backend
+                    npm install
                     npm run migrations > migrations_dump.txt
                     cat migrations_dump.txt
             - run:
@@ -298,7 +299,7 @@ jobs:
         - run: 
             name: Install dependencies 
             command: |
-                apk add --update nodejs npm curl tar gzip
+                apk add --update nodejs  curl tar gzip
                 pip install awscli 
                 aws --version
         - restore_cache:
