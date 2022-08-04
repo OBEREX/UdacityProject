@@ -329,9 +329,9 @@ jobs:
                 command: |
                     cd backend
                     npm run build
-                    
-                    tar -czf artifact.tar.gz dist/* package*
                     cd ..
+                    tar -C backend -czvf artifact.tar.gz .
+                    ls -lh
                     cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
             - run:
                 name: Deploy backend
@@ -343,6 +343,10 @@ jobs:
                     cd .circleci/ansible
                     cat inventory.txt
                     ansible-playbook -i inventory.txt deploy-backend.yml
+            - persist_to_workspace:
+                root: ~/
+                paths:
+                    - project/artifact.tar.gz 
             - destroy-environment
             - revert-migrations
 
