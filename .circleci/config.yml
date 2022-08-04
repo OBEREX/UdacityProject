@@ -190,7 +190,7 @@ jobs:
         - image: cimg/python:3.10
         steps:
         - checkout
-        - run: yum install -y tar gzip
+        - run: apk add --update --no-cache tar gzip
         - run:
             name: Ensure back-end infrastructure exists
             command: |
