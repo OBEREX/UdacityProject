@@ -190,7 +190,6 @@ jobs:
         - image: cimg/python:3.10
         steps:
         - checkout
-        - run: apk add --update --no-cache tar gzip
         - run:
             name: Ensure back-end infrastructure exists
             command: |
@@ -230,10 +229,6 @@ jobs:
         - add_ssh_keys:
             fingerprints:
                 - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
-        - run:
-            name: Install dependencies
-            command: |
-                apk add --update --no-cache tar gzip 
         - attach_workspace:
             at: ~/
         - run:
@@ -289,8 +284,7 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                cd frontend
-                apk add --update --no-cache tar gzip nodejs npm aws-cli
+                cd fro nodejs npm aws-cli
         - restore_cache:
             keys: [frontend-build]
         - run:
@@ -325,8 +319,7 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                cd backend
-                apk add --update --no-cache tar gzip nodejs npm aws-cli ansible
+                cd ba nodejs npm aws-cli ansible
         - restore_cache:
             keys: [backend-build]
         - attach_workspace:
