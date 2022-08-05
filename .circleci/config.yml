@@ -257,19 +257,20 @@ jobs:
 
     run-migrations:
         docker:
-            - image: python:3.7-alpine3.16
+            - image: circleci/node:13.8.0
         steps:
             - checkout
             - restore_cache:
                 keys: [backend-build]
             - attach_workspace:
                 at: ~/
-            - run: 
-                name: Install dependencies 
+            - run:
+                name: Install dependencies
                 command: |
-                    apk add --update nodejs  curl tar gzip
-                    pip install awscli 
-                    aws --version
+                    sudo apt install -y tar gzip curl
+                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    unzip -qq awscliv2.zip
+                    sudo ./aws/install
             - run:
                 name: Run migrations
                 command: |
@@ -298,9 +299,7 @@ jobs:
         - run: 
             name: Install dependencies 
             command: |
-                apk add --update nodejs  curl tar gzip
-                pip install awscli 
-                aws --version
+                apk add --update --no-cache tar gzip nodejs npm aws-cli curl
         - restore_cache:
             keys: [frontend-build]
         - run:
@@ -335,9 +334,7 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                apk add --update tar gzip ansible nodejs npm curl rsync openssh
-                pip install awscli 
-                ansible --version 
+                apk add --update --no-cache tar gzip nodejs npm aws-cli ansible
         - add_ssh_keys:
             fingerprints:
                 - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
