@@ -226,36 +226,40 @@ jobs:
 
     configure-infrastructure:
         docker:
-        - image: python:3.7-alpine3.16
+        - image: python:3.7-alpine3.11
         steps:
-        - checkout
-        - add_ssh_keys:
-            fingerprints:
-                - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
-        - attach_workspace:
-            at: ~/
-        - run:
-            name: Install dependencies
-            command: | 
-                apk add --update --no-cache tar gzip ansible aws-cli
-        - run: 
-            name: View inventory.txt 
-            command: |
-                cat .circleci/ansible/inventory.txt
-        - run:
-            name: Configure server
-            command: |
-                cd .circleci/ansible
-                ansible-playbook -i inventory.txt configure-server.yml
-        - persist_to_workspace:
-            root: ~/
-            paths:
-                - project/backend
-        - destroy-environment  
+            - run: apk add --update tar
+            - run: apk add --update gzip
+            - checkout
+            - add_ssh_keys:
+                fingerprints:
+                    - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
+            - attach_workspace:
+                at: ~/
+            - run:
+                name: Install dependencies
+                command: | 
+                    pk add --update ansible
+                    pip install awscli
+                    aws --version
+            - run: 
+                name: View inventory.txt 
+                command: |
+                    cat .circleci/ansible/inventory.txt
+            - run:
+                name: Configure server
+                command: |
+                    cd .circleci/ansible
+                    ansible-playbook -i inventory.txt configure-server.yml
+            - persist_to_workspace:
+                root: ~/
+                paths:
+                    - project/backend
+            - destroy-environment  
 
     run-migrations:
         docker:
-            - image: circleci/node:13.8.0
+            - image: python:3.10-alpine3.16
         steps:
             - checkout
             - restore_cache:
@@ -265,15 +269,13 @@ jobs:
             - run:
                 name: Install dependencies
                 command: |
-                    sudo apt install -y tar gzip curl
-                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                    unzip -qq awscliv2.zip
-                    sudo ./aws/install
+                    apk add --update --no-cache tar gzip nodejs npm aws-cli curl
             - run:
                 name: Run migrations
                 command: |
                     cd backend
                     npm install
+                    npm build
                     npm run migrations > migrations_dump.txt
                     cat migrations_dump.txt
             - run:
@@ -289,42 +291,42 @@ jobs:
 
     deploy-frontend:
         docker:
-        - image: python:3.7-alpine3.16
+            - image: python:3.10-alpine3.16
         steps:
-        - checkout
-        - attach_workspace:
-            at: ~/ 
-        - run: 
-            name: Install dependencies 
-            command: |
-                apk add --update --no-cache tar gzip nodejs npm aws-cli curl
-        - restore_cache:
-            keys: [frontend-build]
-        - run:
-            name: Get backend url
-            command: |
-                export BACKEND_IP=$(aws ec2 describe-instances \
-                --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
-                --output text)
-                export API_URL="http://${BACKEND_IP}:3030"
-                echo "API_URL = ${API_URL}"
-                echo "API_URL=http://${BACKEND_IP}:3030" >> frontend/.env
-                cat frontend/.env
-        - run:
-            name: Deploy frontend objects
-            command: |
-                cd frontend
-                npm install
-                npm run build
-                tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-                aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-        - destroy-environment
-        - revert-migrations
+            - checkout
+            - attach_workspace:
+                at: ~/
+            - run:
+                name: Install dependencies
+                command: |
+                    apk add --update --no-cache tar gzip nodejs npm ansible curl aws-cli
+            - restore_cache:
+                keys: [frontend-build]
+            - run:
+                name: Get backend url
+                command: |
+                    export BACKEND_IP=$(aws ec2 describe-instances \
+                    --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                    --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+                    --output text)
+                    export API_URL="http://${BACKEND_IP}:3030"
+                    echo "API_URL = ${API_URL}"
+                    echo "API_URL=http://${BACKEND_IP}:3030" >> frontend/.env
+                    cat frontend/.env
+            - run:
+                name: Deploy frontend objects
+                command: |
+                    cd frontend
+                    npm install
+                    npm run build
+                    tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+                    aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            - destroy-environment
+            - revert-migrations
 
     deploy-backend:
         docker:
-        - image: python:3.7-alpine3.16
+            - image: python:3.10-alpine3.16
         steps:
         - checkout
         - attach_workspace:
@@ -332,7 +334,7 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                apk add --update --no-cache tar gzip nodejs npm aws-cli ansible
+                apk add --update --no-cache tar gzip nodejs npm tree aws-cli ansible curl rsync openssh
         - add_ssh_keys:
             fingerprints:
                 - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
