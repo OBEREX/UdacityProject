@@ -239,7 +239,7 @@ jobs:
             - run:
                 name: Install dependencies
                 command: | 
-                    pk add --update ansible
+                    apk add --update ansible
                     pip install awscli
                     aws --version
             - run: 
@@ -283,9 +283,7 @@ jobs:
                 command: |
                     if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
                     then
-                    curl  https://kvdb.io/GGuAd8RUUzUDyBpjx8XDYK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
-                    else
-                    echo "No migrations are pending"
+                    curl  https://kvdb.io/GGuAd8RUUzUDyBpjx8XDYK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '
             - destroy-environment
             - revert-migrations
 
