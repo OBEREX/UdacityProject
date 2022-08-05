@@ -263,6 +263,7 @@ jobs:
             - run: 
                 name: Install dependencies 
                 command: |
+                    cd backend
                     apk add --update curl openssh nodejs 
                     npm install
                     pip install awscli
