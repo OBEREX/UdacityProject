@@ -264,6 +264,7 @@ jobs:
                 name: Install dependencies 
                 command: |
                     apk add --update curl openssh nodejs 
+                    npm install
                     pip install awscli
                     npm --version
                     aws --version
