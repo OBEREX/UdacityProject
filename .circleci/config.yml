@@ -331,7 +331,7 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                apk add --update --no-cache tar gzip nodejs npm tree aws-cli ansible curl rsync openssh
+                apk add --update --no-cache tar gzip nodejs tree aws-cli ansible curl rsync openssh
         - add_ssh_keys:
             fingerprints:
                 - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
@@ -341,7 +341,6 @@ jobs:
             name: Deploy backend
             command: |
                 cd backend
-                npm i
                 npm run build
                 cd ..
                 tar -C backend -czvf artifact.tar.gz 
