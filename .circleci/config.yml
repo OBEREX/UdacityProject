@@ -346,7 +346,7 @@ jobs:
             name: Deploy backend
             command: |
                 cd ..
-                tar -czf artifact.tar.gz dist/* package*
+                tar -czvf artifact.tar.gz -C backend.
                 mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
                 mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
                 cd .circleci/ansible
