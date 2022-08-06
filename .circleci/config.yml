@@ -341,6 +341,7 @@ jobs:
             name: install npm
             command: |
                 cd backend 
+                npm install --legacy-peer-deps
                 npm update
         - run:
             name: Deploy backend
