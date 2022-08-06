@@ -342,7 +342,6 @@ jobs:
             command: |
                 cd backend 
                 npm update
-                npm run build
         - run:
             name: Deploy backend
             command: |
