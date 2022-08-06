@@ -338,15 +338,13 @@ jobs:
         - restore_cache:
             keys: [backend-build]
         - run:
-            name: install npm
+            name: deploy backend
             command: |
                 cd backend 
                 npm install --legacy-peer-deps
-        - run:
-            name: Deploy backend
-            command: |
+                npm build
                 cd ..
-                tar -czvf artifact.tar.gz -C backend.
+                tar -C backend -czvf artifact.tar.gz .
                 mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
                 mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
                 cd .circleci/ansible
