@@ -338,11 +338,14 @@ jobs:
         - restore_cache:
             keys: [backend-build]
         - run:
-            name: Deploy backend
+            name: install npm
             command: |
                 cd backend 
                 npm update
                 npm run build
+        - run:
+            name: Deploy backend
+            command: |
                 cd ..
                 tar -C backend -czvf artifact.tar.gz 
                 mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
