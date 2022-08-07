@@ -1,12 +1,14 @@
 ---
-- name: "Creates backend app directory"
-  file:
-    path: ~/backend-app
-    state: directory
-- name: "Unarchive backend files"
-  unarchive:
-    src: ./roles/deploy/files/artifact.tar.gz
-    dest: ~/backend-app
+- name: "copy artifact into the server"
+  become: true
+  copy:
+    src: files/artifact.tar.gz
+    dest: ~/
+
+- name: extract zipped artifact and install dependancies
+  become: true
+  shell: |
+    tar -xvzf ~/artifact.tar.gz
 - name: "Installing Node Dependencies"
   shell: |
     cd ~/backend-app
