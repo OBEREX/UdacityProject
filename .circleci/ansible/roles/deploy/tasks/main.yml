@@ -9,10 +9,19 @@
   become: true
   shell: |
     tar -xvzf ~/artifact.tar.gz
-- name: "Installing Node Dependencies"
-  shell: |
-    cd ~/backend-app
-    npm i
+- name: install deps
+  become: true
+  apt:
+    name: ['nodejs', 'npm']
+    state: latest
+    update_cache: yes
+- name: install pm2
+  become: true
+  npm:
+    name: pm2
+    global: yes
+    state: latest
+    production: yes
 - name: "Executing Node app with PM2"
   shell: |
     cd ~/backend-app/dist
