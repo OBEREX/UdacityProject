@@ -423,11 +423,11 @@ jobs:
 
     cleanup:
         docker:
-        - image: cimg/base:stable
+        - image: circleci/node:13.8.0
         steps:
         - checkout
         - install_awscli
-        - install_or_update_node
+        - install_nodejs
         - run:
             name: Remove old stacks and files
             command: |
