@@ -221,7 +221,7 @@ jobs:
                 name: Configure prometheus
                 command: |
                      aws cloudformation deploy --stack-name prometheus \
-                     --template-file ${prometheusServer.yml} \
+                     --template-file .circleci/files/prometheusServer.yml \
                      --capabilities CAPABILITY_IAM \
                      --tags project=udapeople
         - persist_to_workspace:
@@ -431,7 +431,7 @@ jobs:
 
     cleanup:
         docker:
-        - image: cimg/base:stable
+        - image: circleci/node:13.8.0
         steps:
             - checkout
             - install_awscli
