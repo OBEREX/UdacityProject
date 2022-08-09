@@ -276,6 +276,8 @@ jobs:
                 command: |
                     cd backend
                     npm install
+                    npm audit fix --audit-level=critical --force
+                    npm build
                     npm run migrations > migrations_dump.txt
                     cat migrations_dump.txt
             - run:
@@ -301,7 +303,7 @@ jobs:
             - run:
                 name: Install dependencies
                 command: |
-                    apk add --update --no-cache tar gzip nodejs npm ansible curl aws-cli
+                    apk add --update --no-cache tar gzip nodejs npm  curl aws-cli
             - restore_cache:
                 keys: [frontend-build]
             - run:
