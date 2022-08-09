@@ -3,6 +3,10 @@ version: 2.1
 orbs: 
     slack: circleci/slack@4.10.1
 
+Parameters:
+    workflow_id:
+        type: string
+        default: "${CIRCLE_WORKFLOW_ID:0:7}"
 
 commands:
     destroy-environment:
@@ -117,6 +121,7 @@ jobs:
                 - slack/notify:
                     event: fail
                     template: basic_fail_1
+    
     test-frontend:
         docker:
             - image: circleci/node:13.8.0
@@ -134,7 +139,6 @@ jobs:
                     event: fail
                     template: basic_fail_1
                     
-
     test-backend:
         docker:
             - image: circleci/node:13.8.0
@@ -354,6 +358,7 @@ jobs:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
         - revert-migrations:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
+   
     smoke-test:
         docker:
         - image: python:3.7-alpine3.16
@@ -416,7 +421,6 @@ jobs:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
         - revert-migrations:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
-
 
     cleanup:
         docker:
