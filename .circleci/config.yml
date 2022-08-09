@@ -220,9 +220,9 @@ jobs:
         - run:
                 name: Configure prometheus
                 command: |
-                     aws cloudformation deploy --stack-name prometheus /
-                     --template-file ${prometheusServer.yml} /
-                     --capabilities CAPABILITY_IAM /
+                     aws cloudformation deploy --stack-name prometheus \
+                     --template-file ${prometheusServer.yml} \
+                     --capabilities CAPABILITY_IAM \
                      --tags project=udapeople
         - persist_to_workspace:
             root: ~/
