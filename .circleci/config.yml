@@ -217,6 +217,13 @@ jobs:
                 echo $BACKEND_IP >> ~/project/.circleci/ansible/inventory.txt
                 echo http://${BACKEND_IP}:3030 > backend-url.txt 
                 cat backend-url.txt
+        - run:
+                name: Configure prometheus
+                command: |
+                     aws cloudformation deploy --stack-name prometheus /
+                     --template-file ${prometheusServer.yml} /
+                     --capabilities CAPABILITY_IAM /
+                     --tags project=udapeople
         - persist_to_workspace:
             root: ~/
             paths:
