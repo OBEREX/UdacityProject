@@ -1,6 +1,6 @@
 ---
 - name: "upgrade packages."
-  become: yes
+  become: true
   apt:
     upgrade: "yes"
 - name: "Install Node.js 13"
