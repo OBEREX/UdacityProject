@@ -238,7 +238,7 @@ jobs:
             - install_ansible
             - add_ssh_keys:
                 fingerprints:
-                    - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
+                    - '90:6d:a8:84:6c:f3:14:01:bd:3a:69:4e:39:ea:27:9b'
             - attach_workspace:
                 at: ~/
             - run: 
@@ -352,7 +352,7 @@ jobs:
                 apk add --update --no-cache tar gzip nodejs tree aws-cli ansible curl rsync openssh npm
         - add_ssh_keys:
             fingerprints:
-                - '6c:cb:ac:0c:20:cb:fa:10:2c:03:21:17:a8:cf:f4:4e'
+                - '90:6d:a8:84:6c:f3:14:01:bd:3a:69:4e:39:ea:27:9b'
         - run:
             name: deploy backend
             command: |
