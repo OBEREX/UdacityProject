@@ -513,7 +513,7 @@ workflows:
                         only: [master]
             - configure-infrastructure:
                 requires: [deploy-infrastructure]
-            - add-prometheus-node-server:
+            - add-prometheus-node-exporter:
                 requires: [configure-infrastructure]
             - run-migrations:
                 requires: [configure-infrastructure]
