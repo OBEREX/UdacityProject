@@ -218,6 +218,7 @@ jobs:
                 --template-file .circleci/files/prometheusServer.yml \
                 --tags project=udapeople \
                 --stack-name prometheusServer \
+                --capabilities CAPABILITY_IAM \
         - run:
             name: Add back-end ip to ansible inventory
             command: |
