@@ -3,10 +3,6 @@ version: 2.1
 orbs: 
     slack: circleci/slack@4.10.1
 
-parameters:
-    workflow_id:
-        type: string
-        default: "${CIRCLE_WORKFLOW_ID:0:7}"
 
 commands:
     destroy-environment:
@@ -77,6 +73,160 @@ commands:
                     npm install
                     npm run migration:revert
                     fi
+    get_failure_logs:
+    description: get a part of the logs from failed builds and send it as a message
+    steps:
+      - run:
+          when: on_fail
+          name: Generate last log lines for slack message
+          command: |
+            API_URL=$(echo $CIRCLE_BUILD_URL | cut -d/ -f4-7)
+            FAILED_STEP=$(curl "https://circleci.com/api/v1.1/project/${API_URL}?circle-token=${CIRCLE_API_TOKEN}" | jq '.steps | .[] | flatten | map(select(.status? == "failed")) | .[] | {allocation_id, step}')
+            ALLOCATION_ID=$(echo "${FAILED_STEP}" | jq -r '.allocation_id')
+            STEP=$(echo "${FAILED_STEP}" | jq -r '.step')
+            curl -o slack_response.txt "https://circleci.com/api/v1.1/project/${API_URL}/output/${STEP}/0?file=true&allocation-id=${ALLOCATION_ID}&circle-token=$CIRCLE_API_TOKEN"
+            sed -i 's/\r$//g' slack_response.txt
+            SLACK_MESSAGE=$(cat slack_response.txt | tail -n 10 | sed '$!s/$/\\n/' | tr -d '\n')
+            echo $SLACK_MESSAGE
+            echo "export SLACK_MESSAGE='${SLACK_MESSAGE}'" >> $BASH_ENV
+  slack_success_notification:
+    parameters:
+      message:
+        type: string
+    steps:
+      - slack/notify:
+          event: pass
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Build succeeded :white_check_mark:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<< parameters.message >>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*: \n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job*: \n$CIRCLE_JOB"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job*: \n${CIRCLE_JOB}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*: \n$CIRCLE_BRANCH"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Click here to view job"
+                      },
+                      "style": "primary",
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                }
+              ]
+            }
+  slack_error_notification:
+    parameters:
+      message:
+        type: string
+    steps:
+      - get_failure_logs
+      - slack/notify:
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Build failed :warning:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<< parameters.message >> \n ```${SLACK_MESSAGE}```"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*: \n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job*: \n$CIRCLE_JOB"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Job*: \n${CIRCLE_JOB}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*: \n$CIRCLE_BRANCH"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Click here to view job"
+                      },
+                      "style": "danger",
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                }
+              ]
+            }
+            
 
     
 jobs:
@@ -97,9 +247,8 @@ jobs:
                 - save_cache:
                     paths: [frontend/node_modules]
                     key: frontend-deps
-                - slack/notify:
-                    event: fail
-                    template: basic_fail_1
+                - slack_error_notification:
+                    message: "Sorry, the frontend build has failed"
 
     build-backend:
         docker:
@@ -118,9 +267,8 @@ jobs:
                 - save_cache:
                         paths: [backend/node_modules]
                         key: backend-dep
-                - slack/notify:
-                    event: fail
-                    template: basic_fail_1
+                - slack_error_notification:
+                    message: "Sorry, the backend build has failed"
     
     test-frontend:
         docker:
@@ -135,9 +283,8 @@ jobs:
                         cd frontend
                         npm install
                         npm run test
-                - slack/notify:
-                    event: fail
-                    template: basic_fail_1
+                - slack_error_notification:
+                    message: "Sorry, the frontend test has failed"
                     
     test-backend:
         docker:
@@ -152,9 +299,8 @@ jobs:
                         cd backend
                         npm install
                         npm run test
-                - slack/notify:
-                    event: fail
-                    template: basic_fail_1
+                - slack_error_notification:
+                    message: "Sorry, the backend test has failed"
 
     scan-frontend:
             docker:
@@ -168,9 +314,10 @@ jobs:
                     command: |
                         cd frontend
                         npm install
-                          
                         npm audit fix --force --audit-level=critical
                         npm audit --audit-level=critical 
+                - slack_error_notification:
+                    message: "Sorry, the frontend scan has failed"
 
     scan-backend:
             docker:
@@ -184,23 +331,24 @@ jobs:
                         command: |
                             cd backend
                             npm install
-                              
-                            npm audit fix --force --audit-level=critical
-                            npm audit fix --force --audit-level=critical
+                            npm audit fix  --audit-level=critical --force
+                            npm audit fix --force 
                             npm audit --audit-level=critical
+                    - slack_error_notification:
+                        message: "Sorry, the backend scan has failed"
 
     deploy-infrastructure:
         docker:
         - image: amazon/aws-cli
         steps:
         - checkout
-        - run: yum install -y tar gzip
+        - run: yum install -y tar gzip jq
         - run:
             name: Ensure back-end infrastructure exists
             command: |
                 aws cloudformation deploy \
                 --template-file .circleci/files/backend.yml \
-                --tags project=udapeople \
+                --tags project=udapeople-backend \
                 --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
                 --parameter-overrides ID=${CIRCLE_WORKFLOW_ID:0:7}
         - run:
@@ -208,7 +356,7 @@ jobs:
             command: |
                 aws cloudformation deploy \
                 --template-file .circleci/files/frontend.yml \
-                --tags project=udapeople \
+                --tags project=udapeople-frontend \
                 --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
                 --parameter-overrides ID=${CIRCLE_WORKFLOW_ID:0:7}
         - run:
@@ -236,6 +384,8 @@ jobs:
                 - project/backend-url.txt
         - destroy-environment:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}   
+        - slack_error_notification:
+           message: "Sorry, the infrastructure could not be deployed."
 
     configure-infrastructure:
         docker:
@@ -276,10 +426,12 @@ jobs:
                     - project/backend
             - destroy-environment:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}  
+            - slack_error_notification:
+                message: "Sorry, failed to configure server"
 
     run-migrations:
         docker:
-            - image: cimg/python:3.10
+            - image: cimg/node:13.8.0
         steps:
             - checkout
             - install_awscli
@@ -307,6 +459,9 @@ jobs:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
             - revert-migrations:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
+            - slack_error_notification:
+                message: "Sorry, the migration has failed"
+
 
     deploy-frontend:
         docker:
@@ -318,7 +473,7 @@ jobs:
             - run:
                 name: Install dependencies
                 command: |
-                    apk add --update --no-cache tar gzip nodejs npm ansible curl aws-cli
+                    apk add --update --no-cache tar gzip nodejs npm jq curl aws-cli
             - restore_cache:
                 keys: [frontend-build]
             - run:
@@ -344,6 +499,8 @@ jobs:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
             - revert-migrations:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
+            - slack_error_notification:
+                message: "Sorry, the frontend deployment failed"
     
     deploy-backend:
         docker:
@@ -357,7 +514,7 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                apk add --update --no-cache tar gzip nodejs tree aws-cli ansible curl rsync openssh npm
+                apk add --update --no-cache tar gzip nodejs ansible openssh npm
         - add_ssh_keys:
             fingerprints:
                 - '90:6d:a8:84:6c:f3:14:01:bd:3a:69:4e:39:ea:27:9b'
@@ -365,7 +522,7 @@ jobs:
             name: deploy backend
             command: |
                 cd backend 
-                npm install --legacy-peer-deps
+                npm i
                 npm run build
                 cd ..
                 tar -C backend -czvf artifact.tar.gz  .
@@ -378,7 +535,9 @@ jobs:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
         - revert-migrations:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
-   
+        - slack_error_notification:
+            message: "Sorry, failed to deploy backend"
+    
     smoke-test:
         docker:
         - image: python:3.7-alpine3.16
@@ -389,11 +548,11 @@ jobs:
         - run:
             name: Install dependencies
             command: |
-                apk add --update --no-cache aws-cli curl npm nodejs 
+                apk add --update --no-cache aws-cli curl npm nodejs tar gzip jq
         - run:
             name: Frontend smoke test
             command: |
-                FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com
+                FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-east-1.amazonaws.com
                 if curl -s ${FRONTEND_WEBSITE} | grep "Welcome"
                 then
                     return 0
@@ -419,6 +578,8 @@ jobs:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
         - revert-migrations:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
+        - slack_error_notification:
+            message: "The smoke tests failed"
 
     cloudfront-update:
         docker:
@@ -430,19 +591,24 @@ jobs:
         - run:
             name: Update cloudfront distribution
             command: |
-                export OLD_WORKFLOW_ID=$(aws cloudformation \
-                        list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                        --no-paginate --output text)
+                export OLD_WORKFLOW_ID=$(aws cloudformation \list-exports 
+                --query "Exports[?Name==\`WorkflowID\`].Value" \
+                 --no-paginate --output text)
+
                 aws cloudformation deploy \
                 --template-file .circleci/files/cloudfront.yml \
                 --stack-name InitialStack \
                 --parameter-overrides WorkflowID=${CIRCLE_WORKFLOW_ID:0:7} \
                 --tags project=udapeople
-                
+
+                echo "Upgrade environment from ${OLD_WORKFLOW_ID} to ${CIRCLE_WORKFLOW_ID:0:7}"
+                               
         - destroy-environment:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
         - revert-migrations:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
+        - slack_error_notification:
+           message: "Sorry, failed to promote new deployment."
 
     cleanup:
         docker:
