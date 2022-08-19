@@ -74,25 +74,26 @@ commands:
                     npm run migration:revert
                     fi
     get_failure_logs:
-    description: get a part of the logs from failed builds and send it as a message
-    steps:
-      - run:
-          when: on_fail
-          name: Generate last log lines for slack message
-          command: |
-            API_URL=$(echo $CIRCLE_BUILD_URL | cut -d/ -f4-7)
-            FAILED_STEP=$(curl "https://circleci.com/api/v1.1/project/${API_URL}?circle-token=${CIRCLE_API_TOKEN}" | jq '.steps | .[] | flatten | map(select(.status? == "failed")) | .[] | {allocation_id, step}')
-            ALLOCATION_ID=$(echo "${FAILED_STEP}" | jq -r '.allocation_id')
-            STEP=$(echo "${FAILED_STEP}" | jq -r '.step')
-            curl -o slack_response.txt "https://circleci.com/api/v1.1/project/${API_URL}/output/${STEP}/0?file=true&allocation-id=${ALLOCATION_ID}&circle-token=$CIRCLE_API_TOKEN"
-            sed -i 's/\r$//g' slack_response.txt
-            SLACK_MESSAGE=$(cat slack_response.txt | tail -n 10 | sed '$!s/$/\\n/' | tr -d '\n')
-            echo $SLACK_MESSAGE
-            echo "export SLACK_MESSAGE='${SLACK_MESSAGE}'" >> $BASH_ENV
+        description: get a part of the logs from failed builds and send it as a message
+        steps:
+        - run:
+            when: on_fail
+            name: Generate last log lines for slack message
+            command: |
+                API_URL=$(echo $CIRCLE_BUILD_URL | cut -d/ -f4-7)
+                FAILED_STEP=$(curl "https://circleci.com/api/v1.1/project/${API_URL}?circle-token=${CIRCLE_API_TOKEN}" | jq '.steps | .[] | flatten | map(select(.status? == "failed")) | .[] | {allocation_id, step}')
+                ALLOCATION_ID=$(echo "${FAILED_STEP}" | jq -r '.allocation_id')
+                STEP=$(echo "${FAILED_STEP}" | jq -r '.step')
+                curl -o slack_response.txt "https://circleci.com/api/v1.1/project/${API_URL}/output/${STEP}/0?file=true&allocation-id=${ALLOCATION_ID}&circle-token=$CIRCLE_API_TOKEN"
+                sed -i 's/\r$//g' slack_response.txt
+                SLACK_MESSAGE=$(cat slack_response.txt | tail -n 10 | sed '$!s/$/\\n/' | tr -d '\n')
+                echo $SLACK_MESSAGE
+                echo "export SLACK_MESSAGE='${SLACK_MESSAGE}'" >> $BASH_ENV
+    
     slack_success_notification:
         parameters:
-        message:
-            type: string
+            message:
+                type: string
         steps:
         - slack/notify:
             event: pass
@@ -159,8 +160,8 @@ commands:
                 }
     slack_error_notification:
         parameters:
-        message:
-            type: string
+            message:
+                type: string
         steps:
         - get_failure_logs
         - slack/notify:
@@ -568,11 +569,11 @@ jobs:
                 --output text)
                 export API_URL=http://${BACKEND_PUBLIC_IP}:3030
                 echo "${API_URL}"
-                if curl  "${API_URL}/api/status" | grep "ok"
-                then
-                    return 0
-                else
-                    return 1
+                if curl -s -v --connect-timeout 30 --retry-connrefused 5 "${API_URL}" | grep "ok"
+                then 
+                return 0
+                else 
+                return 1
                 fi
         - destroy-environment:
             Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
