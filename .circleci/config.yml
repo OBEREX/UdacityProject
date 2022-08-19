@@ -408,7 +408,9 @@ jobs:
                 name: Configure server
                 command: |
                     # add environment variable to server
-                    echo ENVIRONMENT=production >backend/.env
+                    cd ~/project/
+                    echo NODE_ENV=production > backend/.env
+                    echo ENVIRONMENT=production >> backend/.env
                     echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
                     echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env  
                     echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env 
@@ -424,7 +426,7 @@ jobs:
             - persist_to_workspace:
                 root: ~/
                 paths:
-                    - project/backend
+                    - project/backend/.env
             - destroy-environment:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}  
             - slack_error_notification:
@@ -455,6 +457,10 @@ jobs:
                     then
                         curl  https://kvdb.io/GGuAd8RUUzUDyBpjx8XDYK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
                     fi
+            - persist_to_workspace:
+                root: ~/
+                paths:
+                    - project/backend
 
             - destroy-environment:
                 Workflow_ID: ${CIRCLE_WORKFLOW_ID:0:7}
