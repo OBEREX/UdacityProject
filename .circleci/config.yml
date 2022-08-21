@@ -366,7 +366,7 @@ jobs:
                 aws cloudformation deploy \
                 --template-file .circleci/files/prometheusServer.yml \
                 --tags project=udapeople \
-                --stack-name udapeople-prometheus-server \
+                --stack-name udapeople-prometheus-servers \
                 --capabilities CAPABILITY_IAM \
         - run:
             name: Add back-end ip to ansible inventory
